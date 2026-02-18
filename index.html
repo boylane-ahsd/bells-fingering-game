@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Bells Fingering Game</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f0f8ff;
+}
+
+.choice {
+    display: inline-block;
+    margin: 15px;
+    padding: 15px;
+    border: 2px solid black;
+    cursor: pointer;
+}
+
+/* 🔥 Make bells images larger */
+.choice img {
+    width: 220px;   /* was 150px */
+}
+
+/* 🔥 Center staff note image */
+#questionImage {
+    width: 320px;
+    display: block;
+    margin: 20px auto;  /* THIS centers it */
+}
+
+.correct {
+    background-color: lightgreen;
+}
+
+.incorrect {
+    background-color: lightcoral;
+}
+
+#nextButton {
+    margin-top: 20px;
+    padding: 10px 20px;
+    display: none;
+}
+
+#finalScreen {
+    display: none;
+    margin-top: 30px;
+}
+</style>
+</head>
+<body>
+
+<h1>Bells Fingering Game</h1>
+<h2 id="roundDisplay"></h2>
+<h3 id="progressDisplay"></h3>
+<h3 id="textPrompt"></h3>
+
+<img id="questionImage" style="width:250px; display:none;">
+
+<div id="choicesContainer"></div>
+
+<button id="nextButton">Next Question</button>
+
+<div id="finalScreen">
+    <h2>🎉 Congratulations on finishing the challenge!</h2>
+    <p>You got <span id="finalScore"></span> correct answers.</p>
+    <p>Please click below to submit your score:</p>
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdkx0XU5B2hWMNG39N7k6NG9u_gLpM4vstsE7cLsFULGo1wqw/viewform?usp=preview" target="_blank">
+        Submit Score Here
+    </a>
+</div>
+
+<script>
+const notes = ["Bb","C","D","Eb","F","G","A"];
+
+// 6 progressive note groups
+const noteGroups = [
+    ["Bb","C"],
+    ["Bb","C","D"],
+    ["Bb","C","D","Eb"],
+    ["Bb","C","D","Eb","F"],
+    ["Bb","C","D","Eb","F","G"],
+    ["Bb","C","D","Eb","F","G","A"]
+];
+
+let round = 0; // 0–11 (12 rounds)
+let questionNumber = 0;
+let score = 0;
+let answered = false;
+let lastAnswerOrder = "";
+
+const questionsPerRound = 10;
+const totalRounds = 12;
+const totalQuestions = totalRounds * questionsPerRound;
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function generateQuestion() {
+
+    answered = false;
+    document.getElementById("nextButton").style.display = "none";
+
+    let groupIndex = Math.floor(round / 2);
+    let currentNotes = noteGroups[groupIndex];
+
+    let correctNote = currentNotes[Math.floor(Math.random() * currentNotes.length)];
+
+    let isLetterRound = round % 2 === 0;
+
+    document.getElementById("roundDisplay").innerText =
+        "Round " + (round + 1) + " of 12";
+
+    document.getElementById("progressDisplay").innerText =
+        "Question " + (questionNumber + 1) + " of " + totalQuestions;
+
+    const textPrompt = document.getElementById("textPrompt");
+    const questionImage = document.getElementById("questionImage");
+
+    if (isLetterRound) {
+        textPrompt.innerText = "Which note matches: " + correctNote + "?";
+        questionImage.style.display = "none";
+    } else {
+        textPrompt.innerText = "Which note matches this staff note?";
+        questionImage.src = "note_" + correctNote + ".png";
+        questionImage.style.display = "block";
+    }
+
+    let choices = shuffle([...currentNotes]);
+    let currentOrder = choices.join(",");
+
+    while (currentOrder === lastAnswerOrder) {
+        choices = shuffle([...currentNotes]);
+        currentOrder = choices.join(",");
+    }
+
+    lastAnswerOrder = currentOrder;
+
+    const container = document.getElementById("choicesContainer");
+    container.innerHTML = "";
+
+    choices.forEach(note => {
+
+        const div = document.createElement("div");
+        div.classList.add("choice");
+
+        const img = document.createElement("img");
+        img.src = "bells_" + note + ".png";
+
+        div.appendChild(img);
+
+        div.onclick = function() {
+
+            if (answered) return;
+            answered = true;
+
+            if (note === correctNote) {
+                div.classList.add("correct");
+                score++;
+            } else {
+                div.classList.add("incorrect");
+
+                document.querySelectorAll(".choice").forEach(choiceDiv => {
+                    if (choiceDiv.querySelector("img").src.includes("bells_" + correctNote)) {
+                        choiceDiv.classList.add("correct");
+                    }
+                });
+            }
+
+            document.getElementById("nextButton").style.display = "inline-block";
+        };
+
+        container.appendChild(div);
+    });
+}
+
+function nextQuestion() {
+
+    questionNumber++;
+
+    if (questionNumber >= totalQuestions) {
+        endGame();
+        return;
+    }
+
+    if (questionNumber % questionsPerRound === 0) {
+        round++;
+    }
+
+    generateQuestion();
+}
+
+function endGame() {
+
+    document.getElementById("textPrompt").style.display = "none";
+    document.getElementById("questionImage").style.display = "none";
+    document.getElementById("choicesContainer").style.display = "none";
+    document.getElementById("nextButton").style.display = "none";
+    document.getElementById("roundDisplay").style.display = "none";
+    document.getElementById("progressDisplay").style.display = "none";
+
+    document.getElementById("finalScore").innerText =
+        score + " out of " + totalQuestions;
+
+    document.getElementById("finalScreen").style.display = "block";
+}
+
+document.getElementById("nextButton").onclick = nextQuestion;
+
+generateQuestion();
+</script>
+
+</body>
+</html>
